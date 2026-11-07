@@ -32,6 +32,7 @@ app.use(pinoHttp({ logger }));
 
 app.use(express.json());
 app.use(cookieParser());
+
 const openApiDocument = generateOpenApiDocument();
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
 

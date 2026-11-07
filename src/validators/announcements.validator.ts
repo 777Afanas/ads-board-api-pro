@@ -49,6 +49,15 @@ export const announcementSchema = z
     description: z.string().min(10).max(1000),
     price: z.number().positive(),
     category: z.string().min(1),
+    imageUrl: z
+      .string()
+      .url()
+      .nullable()
+      .optional()
+      .openapi({
+        example:
+          "https://res.cloudinary.com/demo/image/upload/v1/announcements/abc123.jpg",
+      }),
     createdAt: z.iso.datetime().openapi({ example: "2025-01-11T10:00:00.000Z" }),
     updatedAt: z.iso.datetime().openapi({ example: "2025-01-11T10:00:00.000Z" }),
     user: publicUserSchema,
