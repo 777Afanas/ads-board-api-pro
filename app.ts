@@ -3,6 +3,8 @@ import type { NextFunction, Request, Response } from "express";
 import swaggerUi from "swagger-ui-express";
 import cookieParser from "cookie-parser";
 import { pinoHttp } from "pino-http"; // імпорт pino-http
+import helmet from "helmet";
+import cors from "cors";
 
 // для ES-модулів імпорт має бути з розширенням .js
 import { generateOpenApiDocument } from "./src/openapi.js"; 
@@ -13,6 +15,17 @@ import logger from "./src/logger.js"; // імпорт логер
 
 
 const app = express();
+
+// підключення Helmet для безпечних заголовків (глобально)
+app.use(helmet());
+
+// налаштування CORS
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || "*";
+app.use(
+  cors({
+    origin: allowedOrigins,
+  })
+);
 
 // підключення pino-http як middleware, передачаючи йому логера
 app.use(pinoHttp({ logger }));
