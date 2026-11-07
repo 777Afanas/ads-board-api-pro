@@ -10,16 +10,15 @@ datasource db {
   provider = "postgresql"   
 }
 
-
 model User {
-  id            Int            @id @default(autoincrement())
-  username      String         @unique
-  email         String         @unique
-  password      String
-  name          String
-  createdAt     DateTime       @default(now())
-  announcements Announcement[]
-  refreshTokens RefreshToken[]
+  id             Int            @id @default(autoincrement())
+  username       String         @unique
+  email          String         @unique
+  password       String
+  name           String
+  createdAt      DateTime       @default(now())
+  announcements  Announcement[]
+  refreshTokens  RefreshToken[]
 }
 
 model RefreshToken {
@@ -36,6 +35,7 @@ model Announcement {
   description String
   price       Float
   category    String
+  imageUrl    String?  // нове поле згідно з вимогами
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   userId      Int
