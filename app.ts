@@ -2,14 +2,20 @@ import express from "express";
 import type { NextFunction, Request, Response } from "express";
 import swaggerUi from "swagger-ui-express";
 import cookieParser from "cookie-parser";
+import { pinoHttp } from "pino-http"; // імпорт pino-http
 
 // для ES-модулів імпорт має бути з розширенням .js
 import { generateOpenApiDocument } from "./src/openapi.js"; 
 import authRouter from "./src/routes/auth.routes.js"; 
 // Імпортуємо роутер оголошень
 import announcementsRouter from "./src/routes/announcements.routes.js"; 
+import logger from "./src/logger.js"; // імпорт логер
+
 
 const app = express();
+
+// підключення pino-http як middleware, передачаючи йому логера
+app.use(pinoHttp({ logger }));
 
 app.use(express.json());
 app.use(cookieParser());

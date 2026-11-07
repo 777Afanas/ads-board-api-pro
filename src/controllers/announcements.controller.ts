@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import prisma from "../../prisma/client.js";
+import logger from "../logger.js";
 
 const PER_PAGE = 10;
 
@@ -70,6 +71,12 @@ export async function createAnnouncement(req: Request, res: Response) {
       user: { select: userSelect },
     },
   });
+
+  // логування створення оголошення
+  logger.info(
+    { announcementId: announcement.id, userId: req.user!.sub },
+    "Announcement created successfully"
+  );
 
   return res.status(201).json(announcement);
 }

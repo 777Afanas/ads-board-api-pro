@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import createHttpError from "http-errors";
 import prisma from "../../prisma/client.js";
+import logger from "../logger.js";
 import { generateTokens, verifyToken } from "../utils/tokens.js";
 import type { LoginBody, RefreshBody, RegisterBody } from "../validators/auth.validator.js";
 
@@ -45,6 +46,9 @@ export async function register(req: Request, res: Response) {
 
   const tokens = await issueTokens(user);
 
+  // логування успішної реєстрації
+  logger.info({ userId: user.id, username: user.username }, "User registered successfully");
+
   res.status(201).json({ user, ...tokens });
 }
 
@@ -64,7 +68,10 @@ export async function login(req: Request, res: Response) {
   }
 
   const tokens = await issueTokens(user);
-  const { password: _password, createdAt: _createdAt, ...publicUser } = user;
+  const { password: _password, createdAt: _createdAt, ...publicUser } = user; 
+
+  // логування успішного входу
+  logger.info({ userId: user.id, username: user.username }, "User logged in successfully");
 
   res.json({ user: publicUser, ...tokens });
 }
