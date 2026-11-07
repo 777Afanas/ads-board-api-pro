@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import prisma from "../../prisma/client.js";
 import logger from "../logger.js";
+import { uploadToCloudinary } from "../utils/cloudinary.js";
 
 const PER_PAGE = 10;
 
@@ -27,9 +28,7 @@ export async function listAnnouncements(req: Request, res: Response) {
       skip: (page - 1) * PER_PAGE,
       take: PER_PAGE,
       orderBy: { createdAt: sort },
-      include: {
-        user: { select: userSelect },
-      },
+      include: { user: { select: userSelect } },
     }),
   ]);
 
@@ -49,9 +48,7 @@ export async function getAnnouncement(req: Request, res: Response) {
 
   const announcement = await prisma.announcement.findUnique({
     where: { id },
-    include: {
-      user: { select: userSelect },
-    },
+    include: { user: { select: userSelect } },
   });
 
   if (!announcement) {
@@ -62,21 +59,25 @@ export async function getAnnouncement(req: Request, res: Response) {
 }
 
 export async function createAnnouncement(req: Request, res: Response) {
+  const data: Record<string, any> = {
+    ...req.body,
+    price: Number(req.body.price),
+    userId: req.user!.sub,
+  };
+
+  // Якщо передано файл: завантажуємо на Cloudinary і логуємо подію (Вимоги 2 і 3)
+  if (req.file) {
+    data.imageUrl = await uploadToCloudinary(req.file.path);
+    logger.info({ imageUrl: data.imageUrl }, "Фото успішно завантажено");
+  }
+
   const announcement = await prisma.announcement.create({
-    data: {
-      ...req.body,
-      userId: req.user!.sub,
-    },
-    include: {
-      user: { select: userSelect },
-    },
+    data: data as any,
+    include: { user: { select: userSelect } },
   });
 
-  // логування створення оголошення
-  logger.info(
-    { announcementId: announcement.id, userId: req.user!.sub },
-    "Announcement created successfully"
-  );
+  // Логування створення оголошення (Вимога 2)
+  logger.info({ announcementId: announcement.id }, "Оголошення успішно створено");
 
   return res.status(201).json(announcement);
 }
@@ -94,12 +95,22 @@ export async function updateAnnouncement(req: Request, res: Response) {
     return res.status(403).json({ message: "Access denied" });
   }
 
+  const data: Record<string, any> = { ...req.body };
+
+  if (req.body.price !== undefined) {
+    data.price = Number(req.body.price);
+  }
+
+  // Якщо при оновленні передано нове фото — завантажуємо і логуємо
+  if (req.file) {
+    data.imageUrl = await uploadToCloudinary(req.file.path);
+    logger.info({ imageUrl: data.imageUrl }, "Фото успішно завантажено");
+  }
+
   const updated = await prisma.announcement.update({
     where: { id },
-    data: req.body,
-    include: {
-      user: { select: userSelect },
-    },
+    data,
+    include: { user: { select: userSelect } },
   });
 
   return res.status(200).json(updated);
@@ -123,5 +134,4 @@ export async function deleteAnnouncement(req: Request, res: Response) {
   return res.status(204).end();
 }
 
-// Аліас для сумісності з різними варіантами імпорту
 export const getAnnouncements = listAnnouncements;

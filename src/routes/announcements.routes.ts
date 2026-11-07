@@ -1,6 +1,8 @@
 import { Router } from "express";
+import { z } from "zod";
 import * as announcementsController from "../controllers/announcements.controller.js";
 import { authenticate } from "../middleware/authenticate.js";
+import { uploadMiddleware } from "../middleware/upload.js";
 import { validateBody, validateParams, validateQuery } from "../middleware/validate.js";
 import {
   errorResponse,
@@ -24,24 +26,31 @@ router.get(
   validateQuery(listAnnouncementsQuerySchema),
   announcementsController.listAnnouncements,
 );
+
 router.get(
   "/:id",
   validateParams(announcementIdSchema),
   announcementsController.getAnnouncement,
 );
+
+// uploadMiddleware до validateBody, multer розпарсив поля форми в req.body
 router.post(
   "/",
   authenticate,
+  uploadMiddleware,
   validateBody(createAnnouncementSchema),
   announcementsController.createAnnouncement,
 );
+
 router.patch(
   "/:id",
   authenticate,
+  uploadMiddleware,
   validateParams(announcementIdSchema),
   validateBody(updateAnnouncementSchema),
   announcementsController.updateAnnouncement,
 );
+
 router.delete(
   "/:id",
   authenticate,
@@ -80,13 +89,28 @@ registry.registerPath({
   },
 });
 
+// Реєстрація multipart/form-data для POST
 registry.registerPath({
   method: "post",
   path: "/announcements",
   tags: ["Announcements"],
-  summary: "Create an announcement",
+  summary: "Create an announcement with optional photo",
   security: [{ bearerAuth: [] }],
-  request: { body: jsonContent(createAnnouncementSchema) },
+  request: {
+    body: {
+      content: {
+        "multipart/form-data": {
+          schema: createAnnouncementSchema.extend({
+            image: z.string().openapi({
+              type: "string",
+              format: "binary",
+              description: "Optional announcement image file",
+            }).optional(),
+          }),
+        },
+      },
+    },
+  },
   responses: {
     201: { description: "Announcement created", ...jsonContent(announcementSchema) },
     400: validationErrorResponse,
@@ -94,13 +118,29 @@ registry.registerPath({
   },
 });
 
+// Реєстрація multipart/form-data для PATCH
 registry.registerPath({
   method: "patch",
   path: "/announcements/{id}",
   tags: ["Announcements"],
-  summary: "Partially update own announcement",
+  summary: "Partially update own announcement with optional photo",
   security: [{ bearerAuth: [] }],
-  request: { params: announcementIdSchema, body: jsonContent(updateAnnouncementSchema) },
+  request: {
+    params: announcementIdSchema,
+    body: {
+      content: {
+        "multipart/form-data": {
+          schema: updateAnnouncementSchema.extend({
+            image: z.string().openapi({
+              type: "string",
+              format: "binary",
+              description: "Optional new announcement image file",
+            }).optional(),
+          }),
+        },
+      },
+    },
+  },
   responses: {
     200: { description: "Announcement updated", ...jsonContent(announcementSchema) },
     400: validationErrorResponse,
