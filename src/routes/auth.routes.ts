@@ -1,4 +1,5 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit"; // імпорт rateLimit
 import * as authController from "../controllers/auth.controller.js";
 import { authenticate } from "../middleware/authenticate.js";
 import { validateBody } from "../middleware/validate.js";
@@ -17,7 +18,19 @@ import {
   tokenPairSchema,
 } from "../validators/auth.validator.js";
 
-const router = Router();
+const router = Router(); 
+
+// Створення інстансу rate limiter 
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 хвилин у мілісекундах
+  max: 10, // Максимум 10 запитів з одного IP
+  message: { error: "Too many requests, please try again later" }, // Повідомлення (загорнуто в об'єкт для JSON відповіді)
+  standardHeaders: true, // Повертає інформацію про ліміти в заголовках `RateLimit-*`
+  legacyHeaders: false, // Вимикає застарілі заголовки `X-RateLimit-*`
+});
+
+// Підключення limiter до роутера auth
+router.use(authLimiter);
 
 router.post("/register", validateBody(registerSchema), authController.register);
 router.post("/login", validateBody(loginSchema), authController.login);
