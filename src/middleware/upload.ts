@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import path from "node:path";
+import createHttpError from "http-errors";
 import multer from "multer";
 
 const storage = multer.diskStorage({
@@ -17,7 +18,7 @@ const upload = multer({
     if (file.mimetype.startsWith("image/")) {
       callback(null, true);
     } else {
-      callback(new Error("Only image files are allowed"));
+      callback(createHttpError(400, "Only image files are allowed"));
     }
   },
 });

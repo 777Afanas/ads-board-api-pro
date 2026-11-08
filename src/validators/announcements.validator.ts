@@ -5,19 +5,16 @@ export const CATEGORIES = ["sale", "service", "job", "other"] as const;
 
 export const createAnnouncementSchema = z
   .object({
-    title: z.string().trim().min(3).max(100).openapi({ example: "Selling a bicycle" }),
+    title: z.string().trim().min(5).max(50).openapi({ example: "Selling a bicycle" }),
     description: z.string().trim().min(10).max(1000).openapi({ example: "Mountain bike, 21 speeds" }),
-    price: z.number().positive().openapi({ example: 8000 }),
-    category: z.string().min(1).openapi({ example: "sale" }),
+    price: z.coerce.number().positive().openapi({ example: 8000 }),
+    category: z.enum(CATEGORIES).openapi({ example: "sale" }),
   })
   .openapi("CreateAnnouncementRequest");
 
 // Забороняє порожній об'єкт {} при оновленні (PATCH)
 export const updateAnnouncementSchema = createAnnouncementSchema
-  .partial()
-  .refine((data) => Object.keys(data).length > 0, {
-    message: "Body must contain at least one field to update",
-  })
+  .partial()  
   .openapi("UpdateAnnouncementRequest");
 
 export const announcementIdSchema = z.object({
@@ -45,10 +42,10 @@ export const announcementQuerySchema = listAnnouncementsQuerySchema;
 export const announcementSchema = z
   .object({
     id: z.number().int().openapi({ example: 6 }),
-    title: z.string().min(3).max(100),
+    title: z.string().min(5).max(50),
     description: z.string().min(10).max(1000),
     price: z.number().positive(),
-    category: z.string().min(1),
+    category: z.enum(CATEGORIES),
     imageUrl: z
       .string()
       .url()

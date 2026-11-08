@@ -60,8 +60,7 @@ export async function getAnnouncement(req: Request, res: Response) {
 
 export async function createAnnouncement(req: Request, res: Response) {
   const data: Record<string, any> = {
-    ...req.body,
-    price: Number(req.body.price),
+    ...req.body,     
     userId: req.user!.sub,
   };
 
@@ -83,6 +82,15 @@ export async function createAnnouncement(req: Request, res: Response) {
 }
 
 export async function updateAnnouncement(req: Request, res: Response) {
+  // Якщо немає жодного текстового поля і не передано файл фото
+  const hasBodyFields = Object.keys(req.body).length > 0;
+  if (!hasBodyFields && !req.file) {
+    return res.status(400).json({
+      error: "Validation failed",
+      message: "At least one field or image must be provided to update",
+    });
+  }
+    
   const id = Number(req.params.id);
 
   const announcement = await prisma.announcement.findUnique({ where: { id } });
@@ -96,10 +104,6 @@ export async function updateAnnouncement(req: Request, res: Response) {
   }
 
   const data: Record<string, any> = { ...req.body };
-
-  if (req.body.price !== undefined) {
-    data.price = Number(req.body.price);
-  }
 
   // Якщо при оновленні передано нове фото — завантажуємо і логуємо
   if (req.file) {
